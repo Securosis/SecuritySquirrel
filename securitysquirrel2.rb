@@ -63,11 +63,44 @@ class ConfigManagement
   end
 end
 
+class IncidentResponse
+  def initialize(instance_id)
+    @instance_id == instance_id
+    
+    # Load configuration and credentials from a JSON file
+    configfile = File.read('creds.json')
+    config = JSON.parse(configfile)
+    
+    # set AWS config
+    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2')
 
 
+    # Fill the ec2 class
+    @@ec2 = AWS.ec2 #=> AWS::EC2
+    @@ec2.client #=> AWS::EC2::Client
+  end
+  def quarantine
+    instancelist = AWS.memoize { @@ec2.instances.map(&:private_dns_name) }
+    puts instancelist
+  end
+end
+    
+    
 
+# Body code, currently in a test state
+#Run basic analysis
+puts "Welcome to SecuritySquirrel. Please select an action:"
+puts ""
+puts "1. Identify all unmanaged instances"
+puts "2. Initiate Quarantine and Forensics on an instance"
+puts ""
+print "Select: "
+menuselect = gets.chomp
+if menuselect == "1"
+  managed_test = ConfigManagement.new
+  managed_test.analyze
+elsif menuselect == "2"
+  incident_response = IncidentResponse.new("blah")
+  incident_response.quarantine
+end
 
-
-
-managed_test = ConfigManagement.new
-managed_test.analyze
