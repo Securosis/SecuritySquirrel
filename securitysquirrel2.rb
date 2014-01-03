@@ -6,9 +6,11 @@
 
 require "rubygems"
 require "aws-sdk"
+require 'aws-sdk-core'
 require "ridley"
 require "json"
 
+# class for chef integration
 class ConfigManagement
   def analyze
     # Load configuration and credentials from a JSON file
@@ -38,7 +40,9 @@ class ConfigManagement
       # Start a ridley connection to our Chef server. Pull the configuration from our file.
 
       chefconfig = config["chef"]
-
+      
+      #supress errors since Ridley is buggy; switch to "fatal" if it keeps showing up.
+      Ridley::Logging.logger.level = Logger.const_get 'ERROR'
       ridley = Ridley.new(
         server_url: "#{config["chef"]["chefserver"]}",
         client_name: "#{config["chef"]["clientname"]}",
@@ -63,25 +67,39 @@ class ConfigManagement
   end
 end
 
+#class for incident resposne functions like quarantine.
 class IncidentResponse
   def initialize(instance_id)
-    @instance_id == instance_id
+    @instance_id = instance_id
     
     # Load configuration and credentials from a JSON file
     configfile = File.read('creds.json')
     config = JSON.parse(configfile)
     
-    # set AWS config
+    # Set AWS config
     AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2')
-
+    
+    # Set application configuration variables
+    @@QuarantineGroup = "#{config["aws"]["QuarantineSecurityGroup"]}"
 
     # Fill the ec2 class
     @@ec2 = AWS.ec2 #=> AWS::EC2
     @@ec2.client #=> AWS::EC2::Client
+    
+    # Added code for the AWS SDK version 2.0 (aws-sdk-core) that has more functions, but kills some existing code so not fully converting to it yet.
+    
+    Aws.config = { access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2' }
+    
+    @@ec22 = Aws::EC2.new
+    @@ec22 = Aws.ec2
   end
   def quarantine
-    instancelist = AWS.memoize { @@ec2.instances.map(&:private_dns_name) }
-    puts instancelist
+    puts ""
+    puts "new stuff"
+    puts "Quarantining #{@instance_id}"
+   quarantine = @@ec22.modify_instance_attribute(instance_id: "#{@instance_id}", groups: ["#{@@QuarantineGroup}"])
+   puts "#{@instance_id} moved to the Quarantine security group."
+    
   end
 end
     
@@ -89,6 +107,7 @@ end
 
 # Body code, currently in a test state
 #Run basic analysis
+puts "\e[H\e[2J"
 puts "Welcome to SecuritySquirrel. Please select an action:"
 puts ""
 puts "1. Identify all unmanaged instances"
@@ -100,7 +119,10 @@ if menuselect == "1"
   managed_test = ConfigManagement.new
   managed_test.analyze
 elsif menuselect == "2"
-  incident_response = IncidentResponse.new("blah")
+  puts "\e[H\e[2J"
+  print "Enter Instance ID:"
+  instance_id = gets.chomp
+  incident_response = IncidentResponse.new(instance_id)
   incident_response.quarantine
 end
 
