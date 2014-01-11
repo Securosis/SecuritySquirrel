@@ -128,14 +128,24 @@ class IncidentResponse
     )
     # find the attached block devices, then the ebs volumes, then the volume ID for each EBS volume. This involves walking the response tree.
     # There is probably a better way to do this in Ruby, but I'm still learning.
+    puts "Identifying attached volumes..."
     block_devices = instance_details.reservations.first.instances.first.block_device_mappings
     ebs = block_devices.map(&:ebs)
     volumes = ebs.map(&:volume_id)
     volumes.each do |vol|
-      puts vol
+      puts "Volume #{vol} identified; creating snapshot"
+      # Create a snapshot of each volume and add the volume and instance ID to the description.
+      # We do this since you can't apply a name tag until the snapshot is created, and we don't want to slow down the process.
+      snap = @@ec22.create_snapshot(
+        volume_id: "#{vol}",
+        description: "IR volume #{vol} of instance #{@instance_id}",
+      )
+      puts "Snapshot complete with description: IR volume #{vol} of instance #{@instance_id} "
     end
     
   end
+  
+  
 end
     
     
@@ -159,7 +169,11 @@ elsif menuselect == "2"
   instance_id = gets.chomp
   incident_response = IncidentResponse.new(instance_id)
   incident_response.quarantine
+  puts ""
   incident_response.tag
+  puts ""
   incident_response.snapshot
+  puts ""
+  
 end
 
