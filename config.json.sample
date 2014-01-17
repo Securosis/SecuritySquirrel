@@ -1,0 +1,21 @@
+# This is still a work in progress, you need to replace values to your own and properly configure the security groups and IAM rights. We will update the template as the code improves. Delete this line and renamce the file to config.json.
+{
+	"aws": {
+		"AccessKey": "your access key",
+		"SecretKey": "your secret key",
+		"Forensics": {
+			"us-west-1":{
+				"QuarantineSecurityGroup": "sg-xxx",
+				"AnalysisSecurityGroup": "sg-xxx",
+				"SSHKey":  "host key",
+				"User": "ec2-user **replace if you want, this is amazon Linux default user**",
+				"AMI":  "ami-ccf297fc **replace if you want, this is amazon Linux AMI**"
+				}
+			}
+	},
+	"chef": {
+		"chefserver": "http://your-chef-server-ip:4000",
+		"clientname": "your client name",
+		"keylocation": "./client1.pem"
+	}
+}
