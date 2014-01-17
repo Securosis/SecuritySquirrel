@@ -1,8 +1,10 @@
 # Securitysquirrel proof of concept by rmogull@securosis.com
-# This is a simple demonstration that evaluates your EC2 environment and identifies instances not managed with Chef.
-# It demonstrates rudimentary security automation by gluing together AWS and Chef using APIs.
+# Copyright 2014 Rich Mogull and Securosis, LLC. with a Creative Commons Attribution, NonCommercial, Share Alike license- http://creativecommons.org/licenses/by-nc-sa/4.0/
+# This software is still currently in development. See the GitHub repository for features and notes.
 
-# You must install the gems aws-sdk and ridley. Ridley is a Ruby gem for direct Chef API access.
+# You must install the listed gems..
+# Also note that this software relies on the AWS 2.0 Ruby SDK developer preview, which runs concurrently with the 1.X version
+# since I'm too lazy to update the old code right now.
 
 require "rubygems"
 require "aws-sdk"
@@ -76,15 +78,22 @@ class IncidentResponse
   def initialize(instance_id)
     @instance_id = instance_id
     
-    # Load configuration and credentials from a JSON file
+    # Load configuration and credentials from a JSON file. Right now hardcoded to config.json in the app drectory.
     configfile = File.read('config.json')
     config = JSON.parse(configfile)
+    
+    # Pull the region. For now, this is hard-coded, will update soon.
+    @region = "us-west-2"
     
     # Set AWS config
     AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2')
     
     # Set application configuration variables
-    @@QuarantineGroup = "#{config["aws"]["QuarantineSecurityGroup"]}"
+    @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-1"]["QuarantineSecurityGroup"]}"
+    @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-1"]["AMI"]}"
+    @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-1"]["AnalysisSecurityGroup"]}"
+    @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-1"]["SSHKey"]}"
+    @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-1"]["User"]}"
 
     # Fill the ec2 class
     @@ec2 = AWS.ec2 #=> AWS::EC2
@@ -102,7 +111,7 @@ class IncidentResponse
     # this method moves the provided instance into the Quarantine security group defined in the config file.
     puts ""
     puts "Quarantining #{@instance_id}..."
-   quarantine = @@ec22.modify_instance_attribute(instance_id: "#{@instance_id}", groups: ["#{@@QuarantineGroup}"])
+   quarantine = @@ec22.modify_instance_attribute(instance_id: "#{@instance_id}", groups: ["#{@QuarantineGroup}"])
    puts "#{@instance_id} moved to the Quarantine security group from your configuration settings."
    end
   
@@ -132,19 +141,139 @@ class IncidentResponse
     block_devices = instance_details.reservations.first.instances.first.block_device_mappings
     ebs = block_devices.map(&:ebs)
     volumes = ebs.map(&:volume_id)
+    # start an empty array to later track and attach the snapshot to a forensics storage volume
+    @snap = []
     volumes.each do |vol|
       puts "Volume #{vol} identified; creating snapshot"
       # Create a snapshot of each volume and add the volume and instance ID to the description.
       # We do this since you can't apply a name tag until the snapshot is created, and we don't want to slow down the process.
+      timestamp = Time.new
       snap = @@ec22.create_snapshot(
         volume_id: "#{vol}",
-        description: "IR volume #{vol} of instance #{@instance_id}",
+        description: "IR volume #{vol} of instance #{@instance_id} at #{timestamp}",
       )
-      puts "Snapshot complete with description: IR volume #{vol} of instance #{@instance_id} "
+      puts "Snapshot complete with description: IR volume #{vol} of instance #{@instance_id}  at #{timestamp}"
+      # get the snapshot id and add it to an array for this instance of the class so we can use it later for forensics
+      @snap = @snap += snap.map(&:snapshot_id)
+      
     end
-    
   end
   
+
+  def forensics_analysis
+    # This method launches an instance and then creates and attaches storage volumes of the IR snapshots. 
+    # It also opens Security Group access between the forensics and target instance.
+    # Right now it is in Main, but later I will update to run it as a thread, after I get the code working.
+    
+    # set starting variables 
+    alpha = ("f".."z").to_a
+    count = 0
+    block_device_map = Array.new
+    
+    # Build the content for the block device mappings to add each snapshot as a volume. 
+    # Device mappings start as sdf and continue up to sdz, which is way more than you will ever need.
+    @snap.each do |snapshot_id|
+      count += 1
+      # pull details to get the volume size
+      snap_details = @@ec22.describe_snapshots(snapshot_ids: ["#{snapshot_id}"])
+      vol_size = snap_details.snapshots.first.volume_size
+      # create the string for the device mapping
+      device = "/dev/sd" + alpha[count].to_s
+      # build the hash we will need later for the bock device mappings
+      temphash = Hash.new
+      temphash = {
+      device_name: "#{device}",
+      ebs: {
+        snapshot_id: "#{snapshot_id}",
+        volume_size: vol_size,
+        volume_type: "standard",
+        }
+      }
+      # add the hash to our array
+      block_device_map << temphash
+      
+    end
+
+    # Notify user that this will run in the background in case the snapshots are large and it takes a while
+    
+    puts "A forensics analysis server is being launched in the background in #{@region} with the name"
+    puts "'Forensics' and the snapshots attached as volumes starting at /dev/sdf "
+    puts "(which may show as /dev/xvdf). Use host key #{@ForensicsSSHKey} for user #{@ForensicsUser}"
+    puts ""
+    puts "Press Return to return to the main menu"
+    blah = gets.chomp
+    
+    # Create array to get the snapshot status via API
+
+    snaparray = Array.new
+    @snap.each do |snap_id|
+      snaparray << "#{snap_id}"
+    end 
+    
+    # Launch the rest as a thread since waiting for the snapshot may otherwise slow the program down.
+    
+    thread = Thread.new do
+          # Get status of snapshots and check to see if any of them are still pending. Loop until they are all ready.
+        status = false
+        until status == true do
+          snap_details = @@ec22.describe_snapshots(snapshot_ids: snaparray)
+          snap_details.each do |snapID|
+            if snap_details.snapshots.first.state == "completed"
+              status = true
+            else
+              status = false
+            end
+          end
+        end
+    
+        forensic_instance = @@ec22.run_instances(
+          image_id: "#{ @ForensicsAMI}",
+          min_count: 1,
+          max_count: 1,
+          instance_type: "t1.micro",
+          key_name: "#{@ForensicsSSHKey}",
+          security_group_ids: ["#{@AnalysisSecurityGroup}"],
+          placement: {
+              availability_zone: "us-west-2a"
+            },        
+          block_device_mappings: block_device_map
+        )
+        # Tag the instance so you can find it later
+        temp_id = forensic_instance.instances.first.instance_id
+        tag = @@ec22.create_tags(
+          resources: ["#{temp_id}"],
+          tags: [
+            {
+              key: "SecurityStatus",
+              value: "Forensic Analysis Server for #{@instance_id}",
+            },
+            {
+              key: "Name",
+              value: "Forensics",
+            },
+          ],
+        )
+      end
+
+  end
+  
+  def store_metadata
+    # Method collects the instance metadata before making changes and appends to a local file.
+    # Note- currently not working right, need fo convert the has to JSON
+    data  = @@ec22.describe_instances(instance_ids: ["#{@instance_id}"])
+    timestamp = Time.new
+    File.open("ForensicMetadataLog.txt", "a") do |log|
+      log.puts "****************************************************************************************"
+      log.puts "Incident for instance #{@instance_id} at #{timestamp}"
+      log.puts "****************************************************************************************"
+      log.puts ""
+      metadata = data.to_h
+      metadata = metadata.to_json
+      log.puts metadata
+    end
+    puts "Metadata for #{@instance_id} appended to ForensicMetadataLog.txt"
+  end
+
   
 end
     
@@ -152,28 +281,42 @@ end
 
 # Body code, currently in a test state
 #Run basic analysis
-puts "\e[H\e[2J"
-puts "Welcome to SecuritySquirrel. Please select an action:"
-puts ""
-puts "1. Identify all unmanaged instances"
-puts "2. Initiate Full Quarantine and Forensics on an instance"
-puts ""
-print "Select: "
-menuselect = gets.chomp
-if menuselect == "1"
-  managed_test = ConfigManagement.new
-  managed_test.analyze
-elsif menuselect == "2"
-  puts "\e[H\e[2J"
-  print "Enter Instance ID:"
-  instance_id = gets.chomp
-  incident_response = IncidentResponse.new(instance_id)
-  incident_response.quarantine
-  puts ""
-  incident_response.tag
-  puts ""
-  incident_response.snapshot
-  puts ""
-  
+menuselect = 0
+until menuselect == 7 do
+    puts "\e[H\e[2J"
+    puts "Welcome to SecuritySquirrel. Please select an action:"
+    puts ""
+    puts "1. Identify all unmanaged instances"
+    puts "2. Initiate Full Quarantine and Forensics on an instance"
+    puts "3. Pull and log metadata for an instance"
+    puts "7. Exit"
+    puts ""
+    print "Select: "
+    menuselect = gets.chomp
+    if menuselect == "1"
+      managed_test = ConfigManagement.new
+      managed_test.analyze
+    elsif menuselect == "2"
+      puts "\e[H\e[2J"
+      print "Enter Instance ID:"
+      instance_id = gets.chomp
+      incident_response = IncidentResponse.new(instance_id)
+      incident_response.store_metadata
+      puts ""
+      incident_response.quarantine
+      puts ""
+      incident_response.tag
+      puts ""
+      incident_response.snapshot
+      puts ""
+      incident_response.forensics_analysis
+    elsif menuselect == "3"
+      puts "\e[H\e[2J"
+      print "Enter Instance ID:"
+      instance_id = gets.chomp
+      incident_response = IncidentResponse.new(instance_id)
+      incident_response.store_metadata 
+    elsif menuselect == "7"
+      menuselect = 7
+    end
 end
-
