@@ -26,7 +26,7 @@ class ConfigManagement
     
     # set AWS config
 
-    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2')
+    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: "#{$region}")
 
 
     # Fill the ec2 class
@@ -82,18 +82,71 @@ class IncidentResponse
     configfile = File.read('config.json')
     config = JSON.parse(configfile)
     
-    # Pull the region. For now, this is hard-coded, will update soon.
-    @region = "us-west-2"
-    
     # Set AWS config
-    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2')
+    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: "#{$region}")
     
-    # Set application configuration variables
-    @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-1"]["QuarantineSecurityGroup"]}"
-    @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-1"]["AMI"]}"
-    @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-1"]["AnalysisSecurityGroup"]}"
-    @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-1"]["SSHKey"]}"
-    @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-1"]["User"]}"
+    # Set application configuration variables. Im hunting for a more efficient way to dynamically pull the region,
+    # but haven't found one that works yet. Thus, for now, sticking with elsif. Suggestions appreciated.
+    
+    # Remember that not all AWS services are available in all regions. Everything in this version of the tool should work.
+    
+
+    if $region == "us-west-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-1"]["User"]}"
+    elsif $region == "us-west-2"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-2"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-2"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-2"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-2"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-2"]["User"]}"
+    elsif $region == "us-east-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["us-east-1"]["User"]}"
+    elsif $region == "eu-west-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["eu-west-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["eu-west-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["eu-west-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["eu-west-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["eu-west-1"]["User"]}"
+    elsif $region == "ap-southeast-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-southeast-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-southeast-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-southeast-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-southeast-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-southeast-1"]["User"]}"
+    elsif $region == "ap-southeast-2"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-southeast-2"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-southeast-2"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-southeast-2"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-southeast-2"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-southeast-2"]["User"]}"
+    elsif $region == "ap-northeast-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-northeast-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-northeast-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-northeast-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-northeast-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-northeast-1"]["User"]}"
+    elsif $region == "sa-east-1"
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["sa-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["sa-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["sa-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["sa-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["sa-east-1"]["User"]}"
+    else
+      #default to us-east-1 in case something fails
+      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["Forensics"]["us-east-1"]["User"]}"
+    end
 
     # Fill the ec2 class
     @@ec2 = AWS.ec2 #=> AWS::EC2
@@ -101,7 +154,7 @@ class IncidentResponse
     
     # Added code for the AWS SDK version 2.0 (aws-sdk-core) that has more functions, but kills some existing code so not fully converting to it yet.
     
-    Aws.config = { access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: 'us-west-2' }
+    Aws.config = { access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: "#{$region}" }
     
     @@ec22 = Aws::EC2.new
     @@ec22 = Aws.ec2
@@ -276,19 +329,81 @@ class IncidentResponse
 
   
 end
-    
-    
 
-# Body code, currently in a test state
-#Run basic analysis
+
+def region
+  # A method for setting the availability zone
+  # Pull the configuration so we only show regions that are configured
+  configfile = File.read('config.json')
+  config = JSON.parse(configfile)
+  
+   puts "\e[H\e[2J"
+   puts "Current region: #{$region}. Select a new region:"
+   puts "(Only regions you have configured are shown)"
+   puts ""
+   puts ""
+
+   if config["aws"]["Forensics"].has_key?('us-east-1')
+        puts "1. us-east-1 (Virginia)"
+      end
+   if config["aws"]["Forensics"].has_key?('us-west-1')
+        puts "2. us-west-1 (California)"
+  end
+    if config["aws"]["Forensics"].has_key?('us-west-2')
+       puts "3. us-west-2 (Oregon)"
+  end
+    if config["aws"]["Forensics"].has_key?('eu-west-1')
+        puts "4. eu-west-1 (Ireland)"
+    end
+    if config["aws"]["Forensics"].has_key?('ap-southeast-1')
+        puts "5. ap-southeast-1 (Singapore)"
+    end
+    if config["aws"]["Forensics"].has_key?('ap-southeast-2')
+       puts "6. ap-southeast-2 (Sydney)"
+    end
+    if config["aws"]["Forensics"].has_key?('ap-northeast-1')
+        puts "7. ap-northeast-1 (Tokyo)"
+    end
+    if config["aws"]["Forensics"].has_key?('sa-east-1')
+        puts "8. sa-east-1 (Sao Paulo)"
+    end
+
+  
+  puts ""
+  print "New region: "
+  option = gets.chomp
+  $region = case option
+    when "1" then "us-east-1"
+    when "2" then "us-west-1"
+    when "3" then "us-west-2"
+    when "4" then "eu-west-1"
+    when "5" then "ap-southeast-1"
+    when "6" then "ap-southeast-2"
+    when "7" then "ap-northeast-1"
+    when "8" then "sa-east-1"
+    else puts "Error, select again:"
+   end
+
+end
+
+
+# Body code
+# Load defaults. Rightnow, just the region.
+configfile = File.read('config.json')
+config = JSON.parse(configfile)
+$region = "#{config["aws"]["DefaultRegion"]}"
+
 menuselect = 0
+region
 until menuselect == 7 do
     puts "\e[H\e[2J"
     puts "Welcome to SecuritySquirrel. Please select an action:"
+    puts "Current region is #{$region}"
     puts ""
     puts "1. Identify all unmanaged instances"
-    puts "2. Initiate Full Quarantine and Forensics on an instance"
+    puts "2. Initiate automated Quarantine and Forensics on an instance"
     puts "3. Pull and log metadata for an instance"
+    puts "6. Change region"
     puts "7. Exit"
     puts ""
     print "Select: "
@@ -296,6 +411,8 @@ until menuselect == 7 do
     if menuselect == "1"
       managed_test = ConfigManagement.new
       managed_test.analyze
+      puts "Press Return to return to the main menu"
+      blah = gets.chomp
     elsif menuselect == "2"
       puts "\e[H\e[2J"
       print "Enter Instance ID:"
@@ -316,7 +433,13 @@ until menuselect == 7 do
       instance_id = gets.chomp
       incident_response = IncidentResponse.new(instance_id)
       incident_response.store_metadata 
+      puts "Press Return to return to the main menu"
+      blah = gets.chomp
+    elsif menuselect == "6"
+      region
     elsif menuselect == "7"
       menuselect = 7
+    else 
+      puts "Error, please select a valid option"
     end
 end

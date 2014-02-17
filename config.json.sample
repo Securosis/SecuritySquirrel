@@ -3,6 +3,7 @@
 	"aws": {
 		"AccessKey": "your access key",
 		"SecretKey": "your secret key",
+		"DefaultRegion": "us-west-2", 
 		"Forensics": {
 			"us-west-1":{
 				"QuarantineSecurityGroup": "sg-xxx",
@@ -10,6 +11,13 @@
 				"SSHKey":  "host key",
 				"User": "ec2-user **replace if you want, this is amazon Linux default user**",
 				"AMI":  "ami-ccf297fc **replace if you want, this is amazon Linux AMI**"
+				},
+			"us-west-1":{
+				"QuarantineSecurityGroup": "sg-xxx",
+				"AnalysisSecurityGroup": "sg-xxx",
+				"SSHKey":  "host key",
+				"User": "ec2-user **replace if you want, this is amazon Linux default user**",
+				"AMI":  "ami-ccf297fc **replace**"
 				}
 			}
 	},
