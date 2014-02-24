@@ -11,6 +11,8 @@ require "aws-sdk"
 require 'aws-sdk-core'
 require "ridley"
 require "json"
+require 'halo-api-lib'
+require 'httparty'
 
 # class for chef integration
 class ConfigManagement
@@ -21,7 +23,7 @@ class ConfigManagement
     
     # Load configuration and credentials from a JSON file
 
-    configfile = File.read('creds.json')
+    configfile = File.read('config.json')
     config = JSON.parse(configfile)
     
     # set AWS config
@@ -73,7 +75,7 @@ class ConfigManagement
   end
 end
 
-#class for incident resposne functions like quarantine.
+# class for incident resposne functions like quarantine.
 class IncidentResponse
   def initialize(instance_id)
     @instance_id = instance_id
@@ -92,60 +94,60 @@ class IncidentResponse
     
 
     if $region == "us-west-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["us-west-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["us-west-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["us-west-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["us-west-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["us-west-1"]["User"]}"
     elsif $region == "us-west-2"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-west-2"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-west-2"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-west-2"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-west-2"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["us-west-2"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["us-west-2"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["us-west-2"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["us-west-2"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["us-west-2"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["us-west-2"]["User"]}"
     elsif $region == "us-east-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-east-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-east-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-east-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-east-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["us-east-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["us-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["us-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["us-east-1"]["User"]}"
     elsif $region == "eu-west-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["eu-west-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["eu-west-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["eu-west-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["eu-west-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["eu-west-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["eu-west-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["eu-west-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["eu-west-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["eu-west-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["eu-west-1"]["User"]}"
     elsif $region == "ap-southeast-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-southeast-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-southeast-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-southeast-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-southeast-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-southeast-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["User"]}"
     elsif $region == "ap-southeast-2"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-southeast-2"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-southeast-2"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-southeast-2"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-southeast-2"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-southeast-2"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["User"]}"
     elsif $region == "ap-northeast-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["ap-northeast-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["ap-northeast-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["ap-northeast-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["ap-northeast-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["ap-northeast-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["User"]}"
     elsif $region == "sa-east-1"
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["sa-east-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["sa-east-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["sa-east-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["sa-east-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["sa-east-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["sa-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["sa-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["sa-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["sa-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["sa-east-1"]["User"]}"
     else
       #default to us-east-1 in case something fails
-      @QuarantineGroup = "#{config["aws"]["Forensics"]["us-east-1"]["QuarantineSecurityGroup"]}"
-      @ForensicsAMI = "#{config["aws"]["Forensics"]["us-east-1"]["AMI"]}"
-      @AnalysisSecurityGroup = "#{config["aws"]["Forensics"]["us-east-1"]["AnalysisSecurityGroup"]}"
-      @ForensicsSSHKey = "#{config["aws"]["Forensics"]["us-east-1"]["SSHKey"]}"
-      @ForensicsUser = "#{config["aws"]["Forensics"]["us-east-1"]["User"]}"
+      @QuarantineGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["QuarantineSecurityGroup"]}"
+      @ForensicsAMI = "#{config["aws"]["RegionSettings"]["us-east-1"]["AMI"]}"
+      @AnalysisSecurityGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["AnalysisSecurityGroup"]}"
+      @ForensicsSSHKey = "#{config["aws"]["RegionSettings"]["us-east-1"]["SSHKey"]}"
+      @ForensicsUser = "#{config["aws"]["RegionSettings"]["us-east-1"]["User"]}"
     end
 
     # Fill the ec2 class
@@ -205,7 +207,7 @@ class IncidentResponse
         volume_id: "#{vol}",
         description: "IR volume #{vol} of instance #{@instance_id} at #{timestamp}",
       )
-      puts "Snapshot complete with description: IR volume #{vol} of instance #{@instance_id}  at #{timestamp}"
+      puts "Snapshots complete with description: IR volume #{vol} of instance #{@instance_id}  at #{timestamp}"
       # get the snapshot id and add it to an array for this instance of the class so we can use it later for forensics
       @snap = @snap += snap.map(&:snapshot_id)
       
@@ -330,6 +332,205 @@ class IncidentResponse
   
 end
 
+# class for automated assessment functions, including Qualys and CloudPassage integration.
+class Assess
+  def initialize(instance_id)
+    @instance_id = instance_id
+    
+    # Load configuration and credentials from a JSON file. Right now hardcoded to config.json in the app drectory.
+    configfile = File.read('config.json')
+    config = JSON.parse(configfile)
+    
+    # Set AWS config
+    AWS.config(access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: "#{$region}")
+    
+    # Set application configuration variables. Im hunting for a more efficient way to dynamically pull the region,
+    # but haven't found one that works yet. Thus, for now, sticking with elsif. Suggestions appreciated.
+    
+    # Remember that not all AWS services are available in all regions. Everything in this version of the tool should work.
+    
+
+    if $region == "us-west-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["us-west-1"]["AssessSecurityGroup"]}"
+    elsif $region == "us-west-2"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["us-west-2"]["AssessSecurityGroup"]}"
+    elsif $region == "us-east-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["AssessSecurityGroup"]}"
+    elsif $region == "eu-west-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["eu-west-1"]["AssessSecurityGroup"]}"
+    elsif $region == "ap-southeast-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-1"]["AssessSecurityGroup"]}"
+    elsif $region == "ap-southeast-2"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-southeast-2"]["AssessSecurityGroup"]}"
+    elsif $region == "ap-northeast-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["ap-northeast-1"]["AssessSecurityGroup"]}"
+    elsif $region == "sa-east-1"
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["sa-east-1"]["AssessSecurityGroup"]}"
+    else
+      #default to us-east-1 in case something fails
+      @AssessSecurityGroup = "#{config["aws"]["RegionSettings"]["us-east-1"]["AssessSecurityGroup"]}"
+    end
+
+    # Fill the ec2 class
+    @@ec2 = AWS.ec2 #=> AWS::EC2
+    @@ec2.client #=> AWS::EC2::Client
+    
+    # Added code for the AWS SDK version 2.0 (aws-sdk-core) that has more functions, but kills some existing code so not fully converting to it yet.
+    
+    Aws.config = { access_key_id: "#{config["aws"]["AccessKey"]}", secret_access_key: "#{config["aws"]["SecretKey"]}", region: "#{$region}" }
+    
+    @@ec22 = Aws::EC2.new
+    @@ec22 = Aws.ec2
+    
+    # set Qualys credentials and scanner source
+        @qualysauth = {:username => "#{config["qualys"]["username"]}", :password => "#{config["qualys"]["password"]}"}
+        @qualys_scanner_ip = "#{config["qualys"]["scanner_ip"]}"
+        
+        # set CloudPassage credentials
+        @halo_id = "#{config["cloudpassage"]["id"]}"
+        @halo_secret = "#{config["cloudpassage"]["secret"]}"
+        @halo_base_url = "https://portal.cloudpassage.com/"
+        @scanner_zone = "#{config["cloudpassage"]["VA_scanner_zone"]}"
+  end
+  
+  def open_security_group
+    # add a security group to the instance to allow scanning from the Qualys scanner.
+    # this code *does not* check to see if the instance is within the allowed number of
+    # security groups. Will add that later. Thus it will fail if you go over that limit.
+    
+    # get instance details
+    instance_details = @@ec22.describe_instances(
+      instance_ids: ["#{@instance_id}"],
+    )
+    
+    # identify IP and security groups
+    puts "Identifying internal IP address..."
+    instance_IP = instance_details.reservations.first.instances.first.private_ip_address
+    puts "IP address is #{instance_IP}"
+    puts ""
+    puts "Identifying current security groups..."
+    securitygroups = instance_details.reservations.first.instances.first.security_groups
+    secgroupID = securitygroups.map(&:group_id)
+    puts secgroupID
+    puts ""
+    puts "Adding the scan security group"
+    secgroupID << @AssessSecurityGroup
+    quarantine = @@ec22.modify_instance_attribute(instance_id: "#{@instance_id}", groups: secgroupID)
+    puts "Scan group added, instance is now in: #{secgroupID}"
+    puts ""
+    puts "**Warning** This version of the code does *not* revert the security group after the scan."
+    puts "This feature will be added soon, but for now you need to manually correct."
+    puts ""
+  end
+  
+  def qualys
+    # method for initiating a Qualys scan on a designated instance
+    puts "Note- you must obtain permission from Amazon before performing the standard scan"
+    puts "in the code below. The Qualys API does not current support pre-auth scans."
+    puts "Type Y to continue:"
+    check = gets.chomp
+    if check == "Y" then
+      # get instance details
+      instance_details = @@ec22.describe_instances(
+        instance_ids: ["#{@instance_id}"],
+      )
+    
+      # identify IP and security groups
+      instance_IP = instance_details.reservations.first.instances.first.private_ip_address
+     timestamp = Time.new
+     scan =(HTTParty.post("https://qualysapi.qg2.apps.qualys.com/api/2.0/fo/scan/",
+          :basic_auth => @qualysauth,
+          :query => { 
+            :action => "launch",
+            :scan_title => "SecuritySquirrel Scan at #{timestamp}", 
+            :ip => "#{instance_IP}",
+            :option_title => "Initial Options",
+            :iscanner_name =>  "us-west-2" 
+          },
+          :headers => { "X-Requested-With" => "ruby httparty"}))
+          puts "Launching Qualys scan named: SecuritySquirrel Scan at #{timestamp}"
+   end
+ end
+ 
+ def halo_open_scan
+   # This method alters the firewall policy in CloudPassage Halo to allow a Qualys scan.
+   # Open a connection to CloudPassage
+   
+   puts "Opening Halo client"
+   halo = Halo::Client.new
+   halo.base_url = @halo_base_url
+   halo.key_id = @halo_id 
+   halo.key_secret = @halo_secret
+   token = halo.token
+
+   # Get server IP address from Amazon to match with Halo, since it doesn't use the AWS instance ID
+   instance_details = @@ec22.describe_instances(
+     instance_ids: ["#{@instance_id}"],
+   )
+   
+   server = instance_details.reservations.first.instances.first.private_ip_address
+
+   # Pull a list of all Halo servers, then identify the ID of the one we are looking for.
+   # This is somewhat inefficient, but the Halo Ruby SDK is still pre-release and functionality is being flushed out.
+   puts "Finding server #{server} in Halo"
+
+   list = Halo::Servers.all halo
+   group_list = Halo::ServerGroups.all halo
+   policy_list = Halo::FirewallPolicies.all halo
+   existing_zones = Halo::FirewallZones.all halo
+   
+   matching_fw = nil
+   matching_fw_id = nil
+
+   group_list.each do |gr|
+     member_list = gr.servers halo
+     member_list.each do |svr|
+       # Check the network interfaces and match on the ID
+       svr.interfaces.each do |ifc|
+         if ifc.ip_address == server
+          # puts "Group: #{gr.to_s}"
+          # puts "Server: #{svr.to_s}"
+          # puts "  platform=#{svr.platform}"
+         
+           #Get the firewall policy ID
+           if (svr.platform == "windows")
+             matching_fw_id = gr.windows_firewall_policy_id
+           else
+             matching_fw_id = gr.linux_firewall_policy_id
+           end
+           #Fill the firewall policy object based on that ID
+           if (matching_fw_id != nil)
+             policy_list.each do |fw|
+               matching_fw = fw if (fw.id == matching_fw_id)
+             end
+           end
+           puts "Changing Halo firewall policy #{matching_fw.name} to allow scanning from Qualys scanner at #{@scanner_zone}"
+           
+           #Find existing firewall zone
+           puts "Finding firewall zone in Halo"
+           zone = nil
+           existing_zones.each do |curzone|
+              if (curzone.ip_address == @scanner_zone)
+                zone = curzone
+              end
+           end
+         
+           #Add the firewall rule. This assumes you have a zone set up for the scanner. 
+           #CloudPassage has much better sample code for handling this, but I wanted
+           # to keep it as simple as possible for this PoC code. Thus, it will break more
+           # and there is more manual work to ensure you set the zone up ahead of time.
+         
+           srcObj = { 'type' => 'FirewallZone', 'id' => zone.id }
+           ruleObj = { 'chain' => 'INPUT', 'action' => 'ACCEPT', 'active' => 'true' }
+           ruleObj['firewall_source'] = srcObj
+           status = matching_fw.add_rule(halo,ruleObj,1) # position=1 is highest priority
+           puts "Adding new rule, status=#{status}"        
+         end
+       end
+   end
+ end
+ end
+end
 
 def region
   # A method for setting the availability zone
@@ -343,28 +544,28 @@ def region
    puts ""
    puts ""
 
-   if config["aws"]["Forensics"].has_key?('us-east-1')
+   if config["aws"]["RegionSettings"].has_key?('us-east-1')
         puts "1. us-east-1 (Virginia)"
       end
-   if config["aws"]["Forensics"].has_key?('us-west-1')
+   if config["aws"]["RegionSettings"].has_key?('us-west-1')
         puts "2. us-west-1 (California)"
   end
-    if config["aws"]["Forensics"].has_key?('us-west-2')
+    if config["aws"]["RegionSettings"].has_key?('us-west-2')
        puts "3. us-west-2 (Oregon)"
   end
-    if config["aws"]["Forensics"].has_key?('eu-west-1')
+    if config["aws"]["RegionSettings"].has_key?('eu-west-1')
         puts "4. eu-west-1 (Ireland)"
     end
-    if config["aws"]["Forensics"].has_key?('ap-southeast-1')
+    if config["aws"]["RegionSettings"].has_key?('ap-southeast-1')
         puts "5. ap-southeast-1 (Singapore)"
     end
-    if config["aws"]["Forensics"].has_key?('ap-southeast-2')
+    if config["aws"]["RegionSettings"].has_key?('ap-southeast-2')
        puts "6. ap-southeast-2 (Sydney)"
     end
-    if config["aws"]["Forensics"].has_key?('ap-northeast-1')
+    if config["aws"]["RegionSettings"].has_key?('ap-northeast-1')
         puts "7. ap-northeast-1 (Tokyo)"
     end
-    if config["aws"]["Forensics"].has_key?('sa-east-1')
+    if config["aws"]["RegionSettings"].has_key?('sa-east-1')
         puts "8. sa-east-1 (Sao Paulo)"
     end
 
@@ -394,7 +595,6 @@ config = JSON.parse(configfile)
 $region = "#{config["aws"]["DefaultRegion"]}"
 
 menuselect = 0
-region
 until menuselect == 7 do
     puts "\e[H\e[2J"
     puts "Welcome to SecuritySquirrel. Please select an action:"
@@ -403,6 +603,7 @@ until menuselect == 7 do
     puts "1. Identify all unmanaged instances"
     puts "2. Initiate automated Quarantine and Forensics on an instance"
     puts "3. Pull and log metadata for an instance"
+    puts "4. Assess an instance"
     puts "6. Change region"
     puts "7. Exit"
     puts ""
@@ -435,6 +636,15 @@ until menuselect == 7 do
       incident_response.store_metadata 
       puts "Press Return to return to the main menu"
       blah = gets.chomp
+    elsif menuselect == "4"
+      puts "\e[H\e[2J"
+      print "Enter Instance ID:"
+      instance_id = gets.chomp
+      assess = Assess.new(instance_id)
+      assess.open_security_group
+      assess.halo_open_scan
+      assess.qualys
+      gets.chomp
     elsif menuselect == "6"
       region
     elsif menuselect == "7"

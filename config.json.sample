@@ -4,7 +4,7 @@
 		"AccessKey": "your access key",
 		"SecretKey": "your secret key",
 		"DefaultRegion": "us-west-2", 
-		"Forensics": {
+		"RegionSettings": {
 			"us-west-1":{
 				"QuarantineSecurityGroup": "sg-xxx",
 				"AnalysisSecurityGroup": "sg-xxx",
@@ -25,5 +25,15 @@
 		"chefserver": "http://your-chef-server-ip:4000",
 		"clientname": "your client name",
 		"keylocation": "./client1.pem"
+	},
+	"qualys": {
+		"username": "your-username",
+		"password": "your-password",
+		"scanner_IP": "your qualys virtual scanner IP"
+	},
+	"cloudpassage": {
+		"id": "halo API id",
+		"secret": "secret",
+		"VA_scanner_zone": "the zone (in CIDR) of your qualys scanner. Must be set as a Halo IP zone"
 	}
 }

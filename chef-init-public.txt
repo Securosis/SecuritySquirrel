@@ -1,0 +1,33 @@
+#cloud-config
+
+apt_update: true
+
+#apt_upgrade: true
+
+packages:
+ - curl
+
+configchef:
+ - &configchef |
+   echo "deb http://apt.opscode.com/ precise-0.10 main" | sudo tee /etc/apt/sources.list.d/opscode.list
+   apt-get update
+   curl http://apt.opscode.com/packages@opscode.com.gpg.key | sudo apt-key add -
+   echo "chef chef/chef_server_url string http://54.213.111.124:4000" | sudo debconf-set-selections && sudo apt-get install chef -y --force-yes
+   wget http://sourceforge.net/projects/s3tools/files/s3cmd/1.5.0-alpha3/s3cmd-1.5.0-alpha3.tar.gz
+   tar xvfz s3cmd-1.5.0-alpha3.tar.gz
+   cd s3cmd-1.5.0-alpha3/
+   cat >s3cfg <<EOM
+   [default]
+   access_key = 
+   secret_key = 
+   security_token = 
+   EOM
+   ./s3cmd --config /s3cmd-1.5.0-alpha3/s3cfg ls s3://cloudsec/
+   ./s3cmd --config /s3cmd-1.5.0-alpha3/s3cfg --force get s3://cloudsec/client.rb /etc/chef/client.rb
+   ./s3cmd --config /s3cmd-1.5.0-alpha3/s3cfg --force get s3://cloudsec/validation.pem /etc/chef/validation.pem
+      ./s3cmd --config /s3cmd-1.5.0-alpha3/s3cfg --force get s3://cloudsec/first_run.json /etc/chef/first_run.json
+   chef-client -j /etc/chef/first_run.json
+
+runcmd:
+ - [ sh, -c, *configchef]
+ - touch /tmp/done
